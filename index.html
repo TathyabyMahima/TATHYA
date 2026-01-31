@@ -205,6 +205,30 @@
         font-size: 28px;
       }
     }
+  
+    /* Floating Contact Button */
+    .floating-contact {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 40px;
+      background: var(--gold);
+      color: var(--black);
+      border: none;
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      font-size: 14px;
+      cursor: pointer;
+      z-index: 999;
+      box-shadow: 0 8px 20px rgba(212, 175, 55, 0.35);
+      transition: all 0.3s ease;
+    }
+
+    .floating-contact:hover {
+      background: var(--gold-light);
+      transform: translateX(-50%) translateY(-2px);
+    }
   </style>
 </head>
 <body>
@@ -285,6 +309,33 @@
   <footer>
     © 2026 Tathya by Mahima. All Rights Reserved.
   </footer>
+
+  <!-- Floating Contact Button -->
+  <button id="floatingContact" class="floating-contact">Contact Us</button>
+
+  <script>
+    const floatingBtn = document.getElementById('floatingContact');
+    const contactSection = document.getElementById('contact');
+
+    floatingBtn.addEventListener('click', () => {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            floatingBtn.style.display = 'none';
+          } else {
+            floatingBtn.style.display = 'block';
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(contactSection);
+  </script>
 
 </body>
 </html>
