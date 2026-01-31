@@ -313,28 +313,46 @@
   <!-- Floating Contact Button -->
   <button id="floatingContact" class="floating-contact">Contact Us</button>
 
-  <script>
+      <script>
     const floatingBtn = document.getElementById('floatingContact');
     const contactSection = document.getElementById('contact');
 
+    // Scroll to contact section
     floatingBtn.addEventListener('click', () => {
       contactSection.scrollIntoView({ behavior: 'smooth' });
     });
 
-    const observer = new IntersectionObserver(
+    let isContactVisible = false;
+
+    // Observe Contact section visibility
+    const contactObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            floatingBtn.style.display = 'none';
-          } else {
-            floatingBtn.style.display = 'block';
-          }
+          isContactVisible = entry.isIntersecting;
+          updateButtonVisibility();
         });
       },
-      { threshold: 0.3 }
+      { threshold: 0.25 }
     );
 
-    observer.observe(contactSection);
+    contactObserver.observe(contactSection);
+
+    function updateButtonVisibility() {
+      const scrollY = window.scrollY || window.pageYOffset;
+
+      // Hide at top OR when contact section is visible
+      if (scrollY < 120 || isContactVisible) {
+        floatingBtn.style.display = 'none';
+      } else {
+        floatingBtn.style.display = 'block';
+      }
+    }
+
+    // Listen to scroll
+    window.addEventListener('scroll', updateButtonVisibility);
+
+    // Initial state
+    updateButtonVisibility();
   </script>
 
 </body>
