@@ -120,6 +120,7 @@
       padding: 0;
       transition: all 0.3s ease;
       overflow: hidden;
+      cursor: pointer;
     }
 
     .service-card:hover {
@@ -132,6 +133,72 @@
       letter-spacing: 1px;
       padding: 15px;
       background: #000;
+    }
+
+    .service-card:focus-visible {
+      outline: 2px solid var(--gold-light);
+      outline-offset: 2px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1200;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .service-modal {
+      width: min(560px, 100%);
+      background: #0a0a0a;
+      border: 1px solid var(--gold);
+      padding: 28px 24px;
+      color: #e6e6e6;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .service-modal h4 {
+      color: var(--gold);
+      font-size: 24px;
+      margin-bottom: 14px;
+      letter-spacing: 1px;
+      padding-right: 32px;
+    }
+
+    .service-modal ul {
+      list-style: disc;
+      margin-left: 20px;
+    }
+
+    .service-modal li {
+      margin: 8px 0;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--gold);
+      background: transparent;
+      color: var(--gold);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    body.modal-open {
+      overflow: hidden;
     }
 
     /* About */
@@ -228,6 +295,14 @@
       .about h3 {
         font-size: 28px;
       }
+
+      .service-modal {
+        padding: 22px 18px;
+      }
+
+      .service-modal h4 {
+        font-size: 20px;
+      }
     }
   
     /* Floating Contact Button */
@@ -283,38 +358,46 @@
     <h3>Our Services</h3>
     <div class="service-grid">
 
-      <div class="service-card image-card">
+      <div class="service-card image-card" data-service-key="bridal" role="button" tabindex="0">
         <img src="bridal-makeup.jpeg" alt="Bridal Makeup">
         <h4>Bridal Makeup</h4>
       </div>
 
-      <div class="service-card image-card">
+      <div class="service-card image-card" data-service-key="nonBridal" role="button" tabindex="0">
         <img src="non-bridal-makeup.jpeg" alt="Non Bridal Makeup">
         <h4>Non-Bridal Makeup</h4>
       </div>
 
-      <div class="service-card image-card">
+      <div class="service-card image-card" data-service-key="party" role="button" tabindex="0">
         <img src="party-makeup.jpeg" alt="Party Makeup">
         <h4>Party Makeup</h4>
       </div>
 
-      <div class="service-card image-card">
+      <div class="service-card image-card" data-service-key="mature" role="button" tabindex="0">
         <img src="mature-skin-makeup.jpeg" alt="Mature Skin Makeup">
         <h4>Mature Skin Makeup</h4>
       </div>
 
-      <div class="service-card image-card">
+      <div class="service-card image-card" data-service-key="hair" role="button" tabindex="0">
         <img src="hair-style.jpeg" alt="Hair Style">
         <h4>Hair Styling</h4>
       </div>
 
-      <div class="service-card image-card">
+      <div class="service-card image-card" data-service-key="nails" role="button" tabindex="0">
         <img src="nail-art.jpeg" alt="Nail Art">
         <h4>Nail Art</h4>
       </div>
 
     </div>
   </section>
+
+  <div class="modal-overlay" id="serviceModalOverlay" aria-hidden="true">
+    <div class="service-modal" role="dialog" aria-modal="true" aria-labelledby="serviceModalTitle">
+      <button class="modal-close" id="serviceModalClose" aria-label="Close service details">&times;</button>
+      <h4 id="serviceModalTitle"></h4>
+      <ul id="serviceModalList"></ul>
+    </div>
+  </div>
 
   <!-- About -->
   <section class="about" id="about">
@@ -348,7 +431,110 @@
   <!-- Floating Contact Button -->
   <button id="floatingContact" class="floating-contact">Contact Us</button>
 
-        <script>
+  <script>
+    const serviceDetails = {
+      bridal: [
+        'HD Bridal Makeup',
+        'Ultr HD Bridal Makeup',
+        'Waterproof Bridal Makeup',
+        'Airbrush Makeup'
+      ],
+      nonBridal: [
+        'Engagement Makeup',
+        'Reception Makeup',
+        'Pre-Wedding Event Looks',
+        'Outfit-Based Makeup Styling'
+      ],
+      party: [
+        'Cocktail Party Makeup',
+        'Evening Glam Makeup',
+        'Soft Glam and Natural Party Look',
+        'Quick Hairstyling Add-On'
+      ],
+      mature: [
+        'Skin-Prep Focused Makeup',
+        'Fine-Line Friendly Base',
+        'Lifting Eye and Face Definition',
+        'Comfortable Long-Wear Finish'
+      ],
+      hair: [
+        'Bridal Bun and Floral Styling',
+        'Soft Curls and Waves',
+        'Sleek Party Hair Looks',
+        'Hair Accessories Setting'
+      ],
+      nails: [
+        'Classic Nail Paint Application',
+        'Custom Nail Art Designs',
+        'Festive and Bridal Nail Themes',
+        'Minimal and Elegant Nail Finishes'
+      ]
+    };
+
+    const serviceCards = document.querySelectorAll('.service-card');
+    const modalOverlay = document.getElementById('serviceModalOverlay');
+    const modalCloseBtn = document.getElementById('serviceModalClose');
+    const modalTitle = document.getElementById('serviceModalTitle');
+    const modalList = document.getElementById('serviceModalList');
+    let lastFocusedCard = null;
+
+    function openServiceModal(card) {
+      const title = card.querySelector('h4')?.textContent?.trim() || 'Service Details';
+      const key = card.dataset.serviceKey;
+      const items = serviceDetails[key] || [];
+
+      modalTitle.textContent = title;
+      modalList.innerHTML = '';
+      items.forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        modalList.appendChild(li);
+      });
+
+      modalOverlay.classList.add('active');
+      modalOverlay.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+      modalCloseBtn.focus();
+    }
+
+    function closeServiceModal() {
+      modalOverlay.classList.remove('active');
+      modalOverlay.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      if (lastFocusedCard) {
+        lastFocusedCard.focus();
+      }
+    }
+
+    serviceCards.forEach((card) => {
+      card.addEventListener('click', () => {
+        lastFocusedCard = card;
+        openServiceModal(card);
+      });
+
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          lastFocusedCard = card;
+          openServiceModal(card);
+        }
+      });
+    });
+
+    modalCloseBtn.addEventListener('click', closeServiceModal);
+
+    modalOverlay.addEventListener('click', (event) => {
+      if (event.target === modalOverlay) {
+        closeServiceModal();
+      }
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && modalOverlay.classList.contains('active')) {
+        closeServiceModal();
+      }
+    });
+
     const floatingBtn = document.getElementById('floatingContact');
     const contactSection = document.getElementById('contact');
 
